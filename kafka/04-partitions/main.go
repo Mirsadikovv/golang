@@ -26,14 +26,13 @@ func main() {
 	createTopic("user-events", 3)
 
 	// Producer с Hash балансировщиком — ключ определяет партицию
-	writer := kafka.NewWriter(kafka.WriterConfig{
-		Brokers: []string{"localhost:9092"},
-		Topic:   "user-events",
-
-		// Hash: hash(key) % numPartitions
-		// Одинаковый key → всегда одна партиция
-		Balancer: &kafka.Hash{},
-	})
+	// Hash: hash(key) % numPartitions → одинаковый key всегда → одна партиция
+	writer := &kafka.Writer{
+		Addr:                   kafka.TCP("localhost:9092"),
+		Topic:                  "user-events",
+		Balancer:               &kafka.Hash{},
+		AllowAutoTopicCreation: true,
+	}
 	defer writer.Close()
 
 	// Имитируем события разных пользователей

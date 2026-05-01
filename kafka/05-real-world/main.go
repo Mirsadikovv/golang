@@ -44,11 +44,12 @@ type Order struct {
 // ── Producer ─────────────────────────────────────────────────────────────────
 
 func runOrderService(ctx context.Context) {
-	writer := kafka.NewWriter(kafka.WriterConfig{
-		Brokers:  []string{brokerAddr},
-		Topic:    topic,
-		Balancer: &kafka.Hash{}, // key=orderID → одна партиция на заказ
-	})
+	writer := &kafka.Writer{
+		Addr:                   kafka.TCP(brokerAddr),
+		Topic:                  topic,
+		Balancer:               &kafka.Hash{}, // key=orderID → одна партиция на заказ
+		AllowAutoTopicCreation: true,
+	}
 	defer writer.Close()
 
 	statuses := []string{"new", "confirmed", "shipped", "delivered"}

@@ -27,9 +27,13 @@ func main() {
 	//
 	// StartOffset: kafka.FirstOffset — читать с самого начала topic,
 	// если для этой GroupID ещё нет сохранённого offset.
+	// Смени GroupID на новое имя — Kafka не имеет committed offset для этой группы
+	// и начнёт читать с FirstOffset (самого начала топика).
+	// Если оставить старый GroupID, Kafka продолжит с последнего сохранённого offset
+	// и старые сообщения не придут.
 	reader := kafka.NewReader(kafka.ReaderConfig{
 		Brokers:     []string{"localhost:9092"},
-		Topic:       "hello-kafka",
+		Topic:       "kafka-go",
 		GroupID:     "my-consumer-group",
 		StartOffset: kafka.FirstOffset,
 

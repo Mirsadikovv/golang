@@ -18,26 +18,29 @@ import (
 
 func main() {
 	// Writer — это наш producer.
-	// Balancer: LeastBytes распределяет сообщения по партициям равномерно по объёму.
-	// Если не указан ключ — Kafka сама выбирает партицию.
-	writer := kafka.NewWriter(kafka.WriterConfig{
-		Brokers:  []string{"localhost:9092"},
-		Topic:    "hello-kafka",
+	// Новый API: kafka.Writer struct вместо kafka.NewWriter(WriterConfig).
+	// AllowAutoTopicCreation: true — создать topic, если он не существует.
+	writer := &kafka.Writer{
+		Addr:     kafka.TCP("localhost:9092"),
 		Balancer: &kafka.LeastBytes{},
 
-		// Ждём подтверждения от брокера перед возвратом из WriteMessages.
-		// RequiredAcks: -1 (All) — максимальная надёжность (все реплики подтвердили).
-		RequiredAcks: 1, // достаточно одного брокера для примера
-	})
+		// MaxAttempts + backoff: при "Leader Not Available" (топик только создался,
+		// идёт выбор лидера) — Writer автоматически повторит попытку.
+		MaxAttempts:            10,
+		WriteBackoffMin:        100 * time.Millisecond,
+		WriteBackoffMax:        1 * time.Second,
+		AllowAutoTopicCreation: true,
+	}
 	defer writer.Close()
 
-	fmt.Println("Producer запущен. Отправляем 5 сообщений...")
+	fmt.Println("Producer запущен. Отправляем 3 сообщения...")
 
-	for i := 1; i <= 5; i++ {
+	for i := 1; i <= 3; i++ {
 		msg := kafka.Message{
 			// Key используется для выбора партиции.
 			// Сообщения с одинаковым Key всегда попадают в одну партицию — порядок сохраняется.
 			// Без Key — балансировщик выбирает партицию сам.
+			Topic: "kafka-go",
 			Key:   []byte(fmt.Sprintf("key-%d", i)),
 			Value: []byte(fmt.Sprintf("Сообщение номер %d, время: %s", i, time.Now().Format("15:04:05"))),
 		}
